@@ -50,7 +50,7 @@ sv_sum <- sv %>%
          sci_comp_sum = sum(c_across(starts_with("SciComp"))),
          sci_int_sum = sum(c_across(starts_with("SciInt"))),
          sci_ID_sum = sum(c_across(starts_with("SciID"))),
-         cns_sum = sum(c_across(starts_with("CNS"))),
+         cns_sum = sum(c_across(starts_with("CNS")), na.rm = TRUE),
          cchs_sum = sum(c_across(starts_with("CCHS"))),
          cchs_eff_sum = sum(c_across(starts_with("CCHS_efficacy"))))
 
@@ -92,8 +92,7 @@ hist(sv_sum$cchs_eff_sum)
 
 #linear models
 scimod <- lmer(sci_sum ~ Test + (1|UniqueID), data = sv_sum)
-residplot(scimod) # 1 observation skews the normal plot
-summary(scimod)
+residplot(scimod) # 2 observation2 skew normality
 
 cnsmod <- lmer(cns_sum ~ Test + (1|UniqueID), data = sv_sum)
 residplot(cnsmod) # looks fine
@@ -101,11 +100,11 @@ summary(cnsmod)
 
 cchsmod <- lmer(cchs_sum ~ Test + (1|UniqueID), data = sv_sum)
 residplot(cchsmod) #trend in residuals that may need investigation
-summary(cchsmod)
+
 
 #create data sets with complete cases only
-ids <- c("143","155","268","305","351","375","615","881","950")
-sci_ids <- c("143","155","268","305","351","615","881","950")
+ids <- c("143","155","268","305","351","375","611","615","881","950")
+sci_ids <- c("143","155","268","305","351","611","615","881","950")
 
 cc <- sv_sum %>%
   filter(UniqueID %in% ids)
@@ -117,20 +116,10 @@ sci <- sv_sum %>%
 library(coin)
 
 #independence test, permutation based, can handle  non-normal data
-independence_test(sci_sum ~ Test | UniqueID,
-                  data = sci,
-                  alternative = "less")
-independence_test(cns_sum ~ Test | UniqueID,
-                  data = cc,
-                  alternative = "less")
-independence_test(cchs_sum ~ Test | UniqueID,
-                  data = cc,
-                  alternative = "less")
 
 oneway_test(sci_sum ~ Test | UniqueID,
                   data = sci,
-                  alternative = "less",
-            conf.int = TRUE)
+                  alternative = "less")
 oneway_test(cns_sum ~ Test | UniqueID,
                   data = cc,
                   alternative = "less")
@@ -140,13 +129,13 @@ oneway_test(cchs_sum ~ Test | UniqueID,
 
 
 #overall summary statistics
-cc %>%
+scc <- cc %>%
   group_by(Test) %>%
   summarize(mean.cns = mean(cns_sum), std.cns = sd(cns_sum),
             mean.cchs = mean(cchs_sum), std.cchs = sd(cchs_sum),
             mean.cchs.eff = mean(cchs_eff_sum), std.cchs.eff = sd(cchs_eff_sum))
 
-sci %>%
+ssci <- sci %>%
   group_by(Test) %>%
   summarize(mean.sci = mean(sci_sum), std.sci = sd(sci_sum),
             mean.comp = mean(sci_comp_sum), std.comp = sd(sci_comp_sum),
