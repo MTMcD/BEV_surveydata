@@ -40,7 +40,7 @@ sv <- sv %>%
       dplyr::recode(as.character(CCHS_10), "1" = "5", "2" = "4", "4" = "2", "5" = "1")),
     CCHS_11 = as.numeric(
       dplyr::recode(as.character(CCHS_11), "1" = "5", "2" = "4", "4" = "2", "5" = "1"))
-    )
+  )
 
 
 #create summary variable of each survey instrument
@@ -118,14 +118,14 @@ library(coin)
 #independence test, permutation based, can handle  non-normal data
 
 oneway_test(sci_sum ~ Test | UniqueID,
-                  data = sci,
-                  alternative = "less")
+            data = sci,
+            alternative = "less")
 oneway_test(cns_sum ~ Test | UniqueID,
-                  data = cc,
-                  alternative = "less")
+            data = cc,
+            alternative = "less")
 oneway_test(cchs_sum ~ Test | UniqueID,
-                  data = cc,
-                  alternative = "less")
+            data = cc,
+            alternative = "less")
 
 
 #overall summary statistics
@@ -134,9 +134,23 @@ scc <- cc %>%
   summarize(mean.cns = mean(cns_sum), std.cns = sd(cns_sum),
             mean.cchs = mean(cchs_sum), std.cchs = sd(cchs_sum),
             mean.cchs.eff = mean(cchs_eff_sum), std.cchs.eff = sd(cchs_eff_sum))
+write.csv(scc, "CNS_CCHS_mean_SD.csv")
+sccpm <- cc %>%
+  group_by(Test, ParticipantMentor) %>%
+  summarize(mean.cns = mean(cns_sum), std.cns = sd(cns_sum),
+            mean.cchs = mean(cchs_sum), std.cchs = sd(cchs_sum),
+            mean.cchs.eff = mean(cchs_eff_sum), std.cchs.eff = sd(cchs_eff_sum))
 
 ssci <- sci %>%
   group_by(Test) %>%
+  summarize(mean.sci = mean(sci_sum), std.sci = sd(sci_sum),
+            mean.comp = mean(sci_comp_sum), std.comp = sd(sci_comp_sum),
+            mean.int = mean(sci_int_sum), std.int = sd(sci_int_sum),
+            mean.id = mean(sci_ID_sum), std.id = sd(sci_ID_sum))
+write.csv(ssci, "SSIS_mean_SD.csv")
+
+sscipm <- sci %>%
+  group_by(Test, ParticipantMentor) %>%
   summarize(mean.sci = mean(sci_sum), std.sci = sd(sci_sum),
             mean.comp = mean(sci_comp_sum), std.comp = sd(sci_comp_sum),
             mean.int = mean(sci_int_sum), std.int = sd(sci_int_sum),
@@ -233,4 +247,46 @@ multiplot(sci_pair, cns_pair, cchs_pair,
 
 dev.off()
 
+#visualize complete cases stratified by participant vs mentor
+sci_rxn <- ggplot(data = sci, 
+                  aes(x = Test, y = sci_sum, group = UniqueID, color = ParticipantMentor)) +
+  geom_line(size=1) +
+  geom_point() +
+  labs(title = "Science Identity") +
+  xlab("") +
+  ylab("Score") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values=c("steelblue", "gray"),
+                     name="")
 
+cns_rxn <- ggplot(data = cc, 
+                  aes(x = Test, y = cns_sum, group = UniqueID, color = ParticipantMentor)) +
+  geom_line(size=1) +
+  geom_point() +
+  labs(title = "Connectedness to Nature") +
+  xlab("") +
+  ylab("Score") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values=c("darkgreen", "gray"),
+                     name="")
+
+cchs_rxn <- ggplot(data = cc, 
+                   aes(x = Test, y = cchs_sum, group = UniqueID, color = ParticipantMentor)) +
+  geom_line(size=1) +
+  geom_point() +
+  labs(title = "Climate Change Hope") +
+  xlab("") +
+  ylab("Score") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values=c("gold", "gray"),
+                     name="")
+
+pdf(file = "rxn_norm_SSIS_CNS_CCHS_paired.pdf", width = 8, height = 3)
+
+multiplot(sci_rxn, cns_rxn, cchs_rxn,
+          cols = 3)
+
+dev.off()
